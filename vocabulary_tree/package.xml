@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package>
+  <name>vocabulary_tree</name>
+  <version>0.0.0</version>
+  <description>The vocabulary_tree package</description>
+
+  <maintainer email="bsankara@usc.edu">Bharath Sankaran</maintainer>
+
+
+  <license>BSD</license>
+
+  <author> Patrick Mihelich </author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package>
+  <name>util_pkg</name>
+  <version>0.0.0</version>
+  <description>The util_pkg package</description>
+
+ <maintainer email="bsankara@usc.edu">Bharath Sankaran</maintainer>
+ <license>BSD</license>
+
+ <author email="bsankara@usc.edu">Bharath Sankaran and Nikolay Atanasov</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>pcl</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>ann_catkin</build_depend>
+
+  <run_depend>pcl</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>ann_catkin</run_depend>
+
+</package>

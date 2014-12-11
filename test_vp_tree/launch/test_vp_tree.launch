@@ -1,0 +1,8 @@
+<launch>
+<node  pkg="test_vp_tree" type="simple_point_cloud_analyzer" name="simple_point_cloud_analyzer" output="screen">
+        <param  name="cld_topic_name" type="string" value="/XTION/depth/points" />
+        <param  name="fx_frm" type="string" value="/BASE" />
+        <param  name="opt_frm" type="string" value="/XTION" />
+</node>
+</launch>
+

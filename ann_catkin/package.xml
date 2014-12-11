@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package>
+  <name>ann_catkin</name>
+  <version>0.0.0</version>
+  <description>The ann_catkin package is the catkinized version of the ANN package. ANN is a library written in C++, which supports data structures and algorithms for both exact and approximate nearest neighbor searching in arbitrarily high dimensions</description>
+  <maintainer email="bohg.jeannette@googlemail.com">Jeannette Bohg</maintainer>
+  <license>LGPL</license>
+  <author>David M. Mount and Sunil Arya</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>

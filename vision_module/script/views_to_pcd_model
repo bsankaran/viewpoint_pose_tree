@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# 	wget http://git.savannah.gnu.org/cgit/parallel.git/plain/src/parallel
+#	chmod 755 parallel
+#	sudo ln -s ./parallel /usr/local/bin/parallel
+#
+# @author
+#	Bharath Sankaran
+#	Computational Motor Control and Learning Laboratory
+#	University of Southern California
+#	Los Angeles, CA 90089
+#	12/04/2012
+#
+
+
+
+# object names:
+declare -a ONAMES=(axe bigbox broom brush flowerspray gastank handlebottle heavyranch pan pipe shovel spadefork spraybottle watercan wreckbar apples bathroomkit bottles cups glasses vases)
+
+VPM=$(rospack find vision_module)/bin/vpm
+
+# call parallel
+(
+for oidx in "${!ONAMES[@]}"; do
+	echo "$VPM ${ONAMES[$oidx]}";
+done
+) | parallel

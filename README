@@ -1,0 +1,86 @@
+This package contains the code for the Viewpoint Pose Tree introduced by Sankaran et al in ICRA-13 and TRO-14.
+
+Database Download
+-----------------
+1) First Download the object models and test scenes in the database directory located at 
+http://clmc.usc.edu/~bharath/viewpoint_pose_tree/ to a database directory inside the viewpoint_pose_tree repository you have cloned from git
+
+
+Installation and Compiling
+--------------------------
+1) First create a catkin workspace and clone the repository into this workspace
+   
+   source /opt/ros/groovy/setup.bash
+   cd ~/
+   mkdir VIEWPOINT_POSETREE && cd VIEWPOINT_POSETREE
+   mkdir src && cd src
+   catkin_init_workspace
+
+2) Build the workspace
+
+   cd ..
+   catkin_make
+   source devel/setup.bash
+   # you can add the source line to your bash with an easy alias like this
+   # add the following line to your bashrc
+   alias groovy_viewpoint='source ~/VIEWPOINT_POSETREE/devel/setup.bash'
+
+3) Clone and compile the code
+
+   cd src
+   git clone ssh://duerer.usc.edu/~bharath/Git/Projects/viewpoint_pose_tree.git
+   cd ..
+   catkin_make
+
+Database Download
+-----------------
+1) First Download the object models and test scenes in the database directory located at
+http://clmc.usc.edu/~bharath/viewpoint_pose_tree/ to a database directory inside the viewpoint_pose_tree repository you have cloned from git
+
+
+Running the Code and Testing Functionality
+------------------------------------------
+1) Building the database of objects with partial view
+
+# PRECONDITIONS: 1.1) Ensure the database directory is in the right folder path, i.e inside the viewpoint_pose_tree root directory
+#                1.2) Create a directory called cloud_data in the database directory 
+#                     mkdir cloud_data
+#                1.3) Make sure you install the GNU parallel package using the instructions provided in vision_module/script/extract_tree_train_pcds
+#                1.4) Ensure that extract_tree_train_pcds is an executable, you can do this by running
+#                     chmod 777 extract_tree_train_pcds
+#                1.5) Run the bash script extract_tree_train_pcds in the vision_module/scripts folder 
+#                     ./extract_tree_train_pcds
+#                1.6) Ensure that the views have been extarcted properly, they should be located in the viewpoint_pose_tree/database/cloud_data folder
+#                     The extracted views can be visualized using pcd_viewer
+
+Once you've statisfied the preconditions you can run the following command to build your VP-Tree
+      
+                 roslaunch vision_module build_tree_database.launch
+
+# Comment: Now you can get a cup of coffee/dinner or call it a night at this point, since it takes a while to build the tree. The time taken to build the tree depends on the object models you have used,
+# The number of cores your computer has and the density of the models. On a slow computer this can take an entire evening.
+# You can choose to use the models we provide or put your own models into database/models you'll have to edit the extract_tree_train_pcds file appropriately
+
+Once you the tree is built, the process automatically terminates and the tree related files, clouds.documents, clouds.tree, clouds.weights can be found in vision_module/data/ folder
+
+2) To test and run the virtual kinect launch the launch file located in the virtual kinect pkg
+     
+      roslaunch virtual_kinect_pkg test_virtual_kinect.launch
+
+# NOTE: You can uncomment the rviz visualization to see the output
+
+3) To use this code to write your own VP-TREE analyzer, check the source code in the test_vp_tree pkg. It contains a simple_point_cloud_analyzer.cpp that uses the tabletop analyzer and vp_tree for preprocessing and analyzing the data using the VP-Tree. This code can be run using the launch file located in the same package
+
+     roslaunch test_vp_tree test_vp_tree.launch
+
+# NOTE: Remember to adapt the parameters in the launch file with the correct topics and frames used by your robot.
+
+4) To simply test the VP tree you can run the following command
+  
+   rosrun vision_module score_pcd <your_view>.pcd
+
+   OR
+
+  rosrun vision_module score_pcd -sp /path/to/save/score.txt <your_view>.pcd
+
+

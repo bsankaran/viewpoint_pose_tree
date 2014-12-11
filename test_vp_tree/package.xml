@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package>
+  <name>perception_executive</name>
+  <version>0.0.0</version>
+  <description>The perception_executive package has interfaces that talk to a RGBD camera and can segment euclidean point cloud clusters from tabletop scenes using the tabletop analyzer. It then classifies the extracted clusters using the Viewpoint Pose Tree</description>
+
+  <maintainer email="bsankara@usc.edu">Bharath Sankaran</maintainer>
+  <author email="bsankara@usc.edu">Bharath Sankaran</author>
+  <license>BSD</license>
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>roslib</build_depend>
+  <build_depend>util_pkg</build_depend>
+  <build_depend>vision_module</build_depend>
+  <build_depend>virtual_kinect_pkg</build_depend>
+  <build_depend>vocabulary_tree</build_depend>
+  <build_depend>pcl</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>roslib</run_depend>
+  <run_depend>vision_module</run_depend>
+  <run_depend>pcl</run_depend>
+  <run_depend>util_pkg</run_depend>
+  <run_depend>virtual_kinect_pkg</run_depend>
+  <run_depend>vocabulary_tree</run_depend>
+</package>

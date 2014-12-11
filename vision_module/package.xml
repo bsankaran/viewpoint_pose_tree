@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package>
+  <name>vision_module</name>
+  <version>0.0.0</version>
+  <description>The vision_module package. This package is the primary module that incorporates the functionality for running the viewpoint_posetree. It contains the classfier training, observation model learning and runtime test binaries.</description>
+
+  <maintainer email="bsankara@usc.edu">Bharath Sankaran</maintainer>
+  <license>BSD</license>
+
+
+  <author email="bsankara@usc.edu">Bharath Sankaran and Nikolay Atanasov</author>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>roslib</build_depend>
+  <build_depend>ann_catkin</build_depend>
+  <build_depend>pcl</build_depend>
+  <build_depend>util_pkg</build_depend>
+  <build_depend>virtual_kinect_pkg</build_depend>
+  <build_depend>vocabulary_tree</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>roslib</run_depend>
+  <run_depend>ann_catkin</run_depend>
+  <run_depend>pcl</run_depend>
+  <run_depend>util_pkg</run_depend>
+  <run_depend>virtual_kinect_pkg</run_depend>
+  <run_depend>vocabulary_tree</run_depend>
+
+</package>
