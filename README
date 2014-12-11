@@ -28,7 +28,7 @@ Installation and Compiling
 3) Clone and compile the code
 
    cd src
-   git clone ssh://duerer.usc.edu/~bharath/Git/Projects/viewpoint_pose_tree.git
+   git clone https://github.com/bsankaran/viewpoint_pose_tree.git
    cd ..
    catkin_make
 
