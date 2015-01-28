@@ -45,7 +45,9 @@ run_virtual_kinect(int argc, char ** argv)
 	// Set scene
     std::string virtual_kinect_dir( ros::package::getPath("virtual_kinect_pkg") );
     std::string ply_file_path(virtual_kinect_dir + "/../database/test_scenes/test_scene1.ply");
+    bool is_color = false;
 	ros::param::get("~ply_file_path", ply_file_path );
+    ros::param::get("~is_color",is_color);
 		
 	ROS_INFO("The ply file is set to: %s", ply_file_path.c_str());
 
@@ -77,7 +79,7 @@ run_virtual_kinect(int argc, char ** argv)
 	// Create virtual kinect and initialize
 	int coord = 1;	// 0 = obj coor, 1 = optical, 2 = standard
 	bool add_noise = true;
-	virtual_kinect vk( init_position, init_orientation, coord, false, add_noise );
+    virtual_kinect vk( init_position, init_orientation, coord, false, add_noise, is_color);
 	vk.init_vkin( ply_file_path );
 	
 	// Set rate

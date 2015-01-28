@@ -38,9 +38,9 @@
 
 virtual_kinect::virtual_kinect( const Eigen::Vector3d position, 
 								const Eigen::Vector4d orientation, bool obj_coord, 
-								bool organized, bool add_noise )
+                                bool organized, bool add_noise, bool is_color)
 	: vkin_offline( position, orientation, obj_coord, organized, add_noise ),
-	  private_nh_("~"), action_name_("go_to_pose_act"),
+      private_nh_("~"), action_name_("go_to_pose_act"), is_color_(is_color),
 	  as_(nh_, "go_to_pose_act", boost::bind(&virtual_kinect::actionCallback, this, _1), false),
 	  ac_("go_to_pose_act", true)
 {
@@ -49,16 +49,25 @@ virtual_kinect::virtual_kinect( const Eigen::Vector3d position,
 	
 	pose_pub = nh_.advertise<geometry_msgs::PoseStamped> ( "vkinect_pose", 1 );
 	cloud_pub = nh_.advertise<pcl::PointCloud<pcl::PointXYZ> > ( "vkinect_cloud", 1 );
+    color_cloud_pub = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> > ( "vkinect_color_cloud", 1 );
 }
 
 void 
 virtual_kinect::spin_vkin()
 {	
-	
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cld = sense();	
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr color_cld;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cld;
+
+    if(is_color_)
+        color_cld = sense_color();
+    else
+        cld = sense();
 
 	publish_pose();
-	publish_cloud(cld);
+    if(is_color_)
+        publish_cloud(color_cld);
+    else
+        publish_cloud(cld);
 
 }
 
@@ -71,7 +80,18 @@ virtual_kinect::publish_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr)
 	ROS_INFO("Cloud has %d points", static_cast<unsigned int>(cloud_ptr->size()));
 	cloud_pub.publish(*cloud_ptr);
 
-}	
+}
+
+void
+virtual_kinect::publish_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr)
+{
+    cloud_ptr -> header.frame_id = "/sensor_optical";
+    cloud_ptr -> header.stamp = ros::Time::now(); //ros::Time(0);
+    ROS_INFO("Cloud has %d points", static_cast<unsigned int>(cloud_ptr->size()));
+    color_cloud_pub.publish(*cloud_ptr);
+
+}
+
 
 
 

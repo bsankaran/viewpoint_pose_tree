@@ -46,14 +46,15 @@
 #include "virtual_kinect_pkg/vkin_offline.hpp"
 #include "misc.hpp"
 
+//PCL Search
+#include <pcl/kdtree/kdtree_flann.h>
+
 void 
 vkin_offline::init_vkin( const std::string ply_file_path )
 {
 	vtkSmartPointer<vtkPolyData> scene_ = loadPLYAsDataSet( ply_file_path.c_str() );
 	
 	// xmin, xmax, ymin, ymax, zmin, zmax 
-	scene_->GetBounds (bounds);
-	
 	/*
 	std::cout << "The bounds are "
 			  << bounds[0] << " "
@@ -62,7 +63,11 @@ vkin_offline::init_vkin( const std::string ply_file_path )
 			  << bounds[3] << " "
 			  << bounds[4] << " "
 			  << bounds[5] << std::endl;
-	*/		  
+    */
+    // Load the ply file as a pointcloud to search for color constraint
+    pcl::PLYReader reader;
+    reader.read(ply_file_path,*colored_cloud_);
+
 	tree = vtkSmartPointer<vtkCellLocator>::New ();
 	tree->SetDataSet (scene_);
 	tree->CacheCellBoundsOn ();
@@ -84,6 +89,17 @@ vkin_offline::sense()
 }
 
 
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr
+vkin_offline::sense_color()
+{
+    /*
+    std::cout << "Sensing at position " << position_.transpose()
+              << " and orientation " << orientation_.transpose() << std::endl;
+    */
+    return sense_color( position_, orientation_ );
+}
+
+
 pcl::PointCloud<pcl::PointXYZ>::Ptr
 vkin_offline::sense( const Eigen::Vector3d & position, const Eigen::Vector3d & target )
 {
@@ -96,6 +112,20 @@ vkin_offline::sense( const Eigen::Vector3d & position, const Eigen::Vector3d & t
 	*/
 	return sense( position, orientation );
 }
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr
+vkin_offline::sense_color( const Eigen::Vector3d & position, const Eigen::Vector3d & target )
+{
+    // Determine the orientation
+    Eigen::Vector4d orientation = misc::target2quat(position, target);
+
+    /*
+    std::cout << "Sensing at position " << position_.transpose()
+              << " and orientation " << orientation.transpose() << std::endl;
+    */
+    return sense_color( position, orientation );
+}
+
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr
 vkin_offline::sense( const Eigen::Vector3d & position, const Eigen::Vector4d & orientation )
@@ -223,6 +253,7 @@ vkin_offline::sense( const Eigen::Vector3d & position, const Eigen::Vector4d & o
 
 					}
 				}
+
 			 	
 			 	cloud_ptr->points.push_back (pt);
 			}
@@ -259,6 +290,205 @@ vkin_offline::sense( const Eigen::Vector3d & position, const Eigen::Vector4d & o
 	return cloud_ptr;
 }
 
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr
+vkin_offline::sense_color( const Eigen::Vector3d & position, const Eigen::Vector4d & orientation )
+{
+    double up[3] = {0.0, 0.0, 0.0};
+    double right[3] = {0.0, 0.0, 0.0};
+    double x_axis[3] = {1.0, 0.0, 0.0};
+    double z_axis[3] = {0.0, 0.0, 1.0};
+    double eye[3], viewray[3];
+
+    // Camera position
+    eye[0] = position.x();
+    eye[1] = position.y();
+    eye[2] = position.z();
+
+    // Viewray, right, and up
+    // In Standard coordinate system (x = forward, y = left, z = up)
+    // wRs = [viewray | left | up]
+    Eigen::Matrix<double,3,3> wRs = misc::quat2rot( orientation );
+
+    viewray[0] = wRs(0,0);
+    viewray[1] = wRs(1,0);
+    viewray[2] = wRs(2,0);
+    if (fabs(viewray[0]) < EPS) viewray[0] = 0;
+    if (fabs(viewray[1]) < EPS) viewray[1] = 0;
+    if (fabs(viewray[2]) < EPS) viewray[2] = 0;
+
+    right[0] = -wRs(0,1);
+    right[1] = -wRs(1,1);
+    right[2] = -wRs(2,1);
+    if (fabs(right[0]) < EPS) right[0] = 0;
+    if (fabs(right[1]) < EPS) right[1] = 0;
+    if (fabs(right[2]) < EPS) right[2] = 0;
+
+    up[0] = wRs(0,2);
+    up[1] = wRs(1,2);
+    up[2] = wRs(2,2);
+    if (fabs(up[0]) < EPS) up[0] = 0;
+    if (fabs(up[1]) < EPS) up[1] = 0;
+    if (fabs(up[2]) < EPS) up[2] = 0;
+
+
+    // Prepare the point cloud data
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    double temp_beam[3], beam[3], p[3];
+    double p_coords[3], x[3], t;
+    int subId;
+
+    // Create a transformation
+    vtkGeneralTransform* tr1 = vtkGeneralTransform::New ();
+    vtkGeneralTransform* tr2 = vtkGeneralTransform::New ();
+
+    // Sweep vertically
+    for (double vert = sp.vert_start; vert <= sp.vert_end; vert += sp.vert_res)
+    {
+
+        tr1->Identity ();
+        tr1->RotateWXYZ (vert, right);
+        tr1->InternalTransformPoint (viewray, temp_beam);
+
+        // Sweep horizontally
+        for (double hor = sp.hor_start; hor <= sp.hor_end; hor += sp.hor_res)
+        {
+
+            // Create a beam vector with (lat,long) angles (vert, hor) with the viewray
+            tr2->Identity ();
+            tr2->RotateWXYZ (hor, up);
+            tr2->InternalTransformPoint (temp_beam, beam);
+            vtkMath::Normalize (beam);
+
+            // Find point at max range: p = eye + beam * max_dist
+            for (int d = 0; d < 3; d++)
+                p[d] = eye[d] + beam[d] * sp.max_dist;
+
+            // Put p_coords into laser scan at packet id = vert, scan id = hor
+            /*
+            std::cout <<"eye = "<< eye[0] << " " << eye[1] << " " << eye[2] << std::endl;
+            std::cout <<"p = " << p[0] << " " << p[1] << " " << p[2] << std::endl;
+            std::cout <<"x = " << x[0] << " " << x[1] << " " << x[2] << std::endl;
+            std::cout <<"t = " << t << ", subId = " << subId << std::endl;
+            */
+
+            // Determine if the ray between eye (camera position) and p (max range)
+            // intersects with the tree given a tolerance of 0
+            // return the intersection coordinates in x in the WORLD frame
+            // return the cell which was intersected by the ray in cellId
+            vtkIdType cellId;
+            if (tree->IntersectWithLine (eye, p, 0, t, x, p_coords, subId, cellId))
+            {
+                // x are the coordinates in the world frame
+                pcl::PointXYZRGB pt;
+                switch( sp.coord )
+                {
+                case 0:{		// object coordinates
+                    pt.x = static_cast<float> (x[0]);
+                    pt.y = static_cast<float> (x[1]);
+                    pt.z = static_cast<float> (x[2]);
+                    break;
+                }
+                case 2:{
+                    // camera coordinates: x = forward, y = left, z = up
+                    // Translate the origin to the sensor position
+                    x[0] -= eye[0];
+                    x[1] -= eye[1];
+                    x[2] -= eye[2];
+
+                    // sRw = wRs^T = [viewray ; left ; up]
+                    pt.x = static_cast<float> ( viewray[0]*x[0] + viewray[1]*x[1] + viewray[2]*x[2] );
+                    pt.y = static_cast<float> ( -right[0]*x[0] - right[1]*x[1] - right[2]*x[2] );
+                    pt.z = static_cast<float> ( up[0]*x[0] + up[1]*x[1] + up[2]*x[2] );
+                    break;
+                }
+                default:{
+                    // optical coordinates: z = forward, x = right, y = down
+
+                    // Translate the origin to the sensor position
+                    x[0] -= eye[0];
+                    x[1] -= eye[1];
+                    x[2] -= eye[2];
+
+                    pt.x = static_cast<float> ( right[0]*x[0] + right[1]*x[1] + right[2]*x[2] );
+                    pt.y = static_cast<float> ( -up[0]*x[0] - up[1]*x[1] - up[2]*x[2] );
+                    pt.z = static_cast<float> ( viewray[0]*x[0] + viewray[1]*x[1] + viewray[2]*x[2] );
+
+                }
+                }
+
+                // Now use the KDtree to get the color information from the original cloud
+                update_color_information(pt);
+                cloud_ptr->points.push_back (pt);
+            }
+            else if (sp.organized)
+            {
+                pcl::PointXYZRGB pt;
+                pt.x = pt.y = pt.z = std::numeric_limits<float>::quiet_NaN ();
+                pt.r = pt.g = pt.b = 255;
+
+                cloud_ptr->points.push_back (pt);
+            }
+        } // Horizontal
+    } // Vertical
+
+    // Add noise
+    if(sp.add_noise)
+    {
+        if ( sp.coord == 0 )
+            addNoise(position, cloud_ptr, gaussian_rng);
+        else
+            addNoise(Eigen::Vector3d(0.0,0.0,0.0), cloud_ptr, gaussian_rng);
+    }
+
+    if (sp.organized)
+    {
+        cloud_ptr->height = 1 + static_cast<uint32_t> ((sp.vert_end - sp.vert_start) / sp.vert_res);
+        cloud_ptr->width = 1 + static_cast<uint32_t> ((sp.hor_end - sp.hor_start) / sp.hor_res);
+    }
+    else
+    {
+        cloud_ptr->width = static_cast<uint32_t> (cloud_ptr->points.size ());
+        cloud_ptr->height = 1;
+    }
+
+    return cloud_ptr;
+}
+
+void
+vkin_offline::update_color_information(pcl::PointXYZRGB &search_point)
+{
+
+    pcl::KdTreeFLANN<pcl::PointXYZRGB> pcl_tree_;
+    pcl_tree_.setInputCloud(colored_cloud_);
+
+    int K = 1;
+    std::vector<int> pointIdxNKNSearch(K);
+    std::vector<float> pointNKNSquaredDistance(K);
+
+
+    if ( pcl_tree_.nearestKSearch (search_point, K, pointIdxNKNSearch, pointNKNSquaredDistance) > 0 )
+    {
+        //pcl::PointXYZRGB colored_point;
+        //colored_point = colored_cloud_->points[pointIdxNKNSearch[1]];
+        //uint32_t rgb = *reinterpret_cast<int*>(&colored_point.rgb);
+        //uint8_t r = (rgb >> 16) & 0x0000ff;
+        //uint8_t g = (rgb >> 8)  & 0x0000ff;
+        //uint8_t b = (rgb)       & 0x0000ff;
+        //search_point.rgb = *reinterpret_cast<float*>(&rgb);
+
+        search_point.r  = colored_cloud_->points[pointIdxNKNSearch[1]].r;
+        search_point.g  = colored_cloud_->points[pointIdxNKNSearch[1]].g;
+        search_point.b  = colored_cloud_->points[pointIdxNKNSearch[1]].b;
+
+    }
+    else
+    {
+        uint8_t r = 255, g = 255, b = 255;    // Example: White
+        uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
+        search_point.rgb = *reinterpret_cast<float*>(&rgb);
+    }
+}
 
 void 
 vkin_offline::addNoise( const Eigen::Vector3d position, 
@@ -291,4 +521,37 @@ vkin_offline::addNoise( const Eigen::Vector3d position,
 		cloud->points[cp].y += ray_vec.y();
 		cloud->points[cp].z += ray_vec.z();
 	}
+}
+
+void
+vkin_offline::addNoise( const Eigen::Vector3d position,
+                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+                        vkin_offline::GEN &generator )
+{
+    Eigen::Vector3d ray_vec;
+    double noise_param = 0.0025;		// TRUE IS 0.0005
+    double noise_std;
+    double sq_norm;
+    for (std::size_t cp = 0; cp < cloud->points.size(); cp++)
+    {
+        // get a vector pointing from the camera to the point
+        ray_vec.x() = cloud->points[cp].x - position.x();
+        ray_vec.y() = cloud->points[cp].y - position.y();
+        ray_vec.z() = cloud->points[cp].z - position.z();
+
+        // normalize it
+        sq_norm = ray_vec.squaredNorm();
+        ray_vec = ray_vec / sqrt(sq_norm);
+
+        // get the noise vector magnitude
+        noise_std = noise_param * sq_norm;
+
+        //set the correct size
+        ray_vec = generator()*noise_std*ray_vec;
+
+        // add the noise
+        cloud->points[cp].x += ray_vec.x();
+        cloud->points[cp].y += ray_vec.y();
+        cloud->points[cp].z += ray_vec.z();
+    }
 }

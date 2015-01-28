@@ -66,6 +66,10 @@ private:
 	// communication
 	ros::Publisher pose_pub;
 	ros::Publisher cloud_pub;
+    ros::Publisher color_cloud_pub;
+
+    //Color parser
+    bool is_color_;
 	
 protected:
 	virtual ros::NodeHandle& getNodeHandle() { return nh_; }
@@ -80,7 +84,7 @@ protected:
 	
 public:
 	virtual_kinect( const Eigen::Vector3d position, const Eigen::Vector4d orientation,
-					bool obj_coord, bool organized, bool add_noise );
+                    bool obj_coord, bool organized, bool add_noise, bool is_color );
 
 	~virtual_kinect(){
 		//ROS_INFO("Shutting down virtual_kinect node!");
@@ -102,6 +106,7 @@ private:
 							 
 	
 	void publish_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ptr);
+    void publish_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr);
 	void publish_pose();
 	
 

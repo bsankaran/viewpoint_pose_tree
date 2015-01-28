@@ -3,9 +3,9 @@
 	<!-- Start a virtual kinect at the test scene -->
 	<node name="vkin_serv1" pkg="virtual_kinect_pkg" type="test_vkin_server"
 			args="" respawn="false" output="screen">		 
-		<param  name="ply_file_path" type="string"
-				  value="$(find virtual_kinect_pkg)/../database/test_scenes/test_scene1.ply"/>
-		
+	<!--	<param  name="ply_file_path" type="string" value="$(find virtual_kinect_pkg)/../database/test_scenes/test_scene1.ply"/> -->
+                <param name="ply_file_path" type="string" value="$(find virtual_kinect_pkg)/../database/color_models/haagen_dazs.ply"/>
+                <param name="is_color" type="bool" value="true"/>
 		<!-- Specify the kinect initial position -->
 		<!-- The orientation is set to look at (0,0,0) -->
 		<param name="px" type="double" value="1.5"/>
@@ -18,3 +18,4 @@
 
 <!-- To visualize run: -->
 <!-- rosrun rviz rviz -d `rospack find virtual_kinect_pkg`/cfg/test_virtual_kinect.vcg -->
+rosrun rviz rviz -d `rospack find virtual_kinect_pkg`/cfg/test_virtual_kinect_color.rviz
