@@ -93,7 +93,7 @@ endif()
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES vtree_user
+  LIBRARIES vtree_user vtree_color_user
   CATKIN_DEPENDS roslib ann_catkin pcl util_pkg virtual_kinect_pkg vocabulary_tree
 #  DEPENDS system_lib
 )
@@ -109,11 +109,14 @@ include_directories(include ${VTK_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${catkin_I
 
 ## Declare a cpp library
 add_library(vtree_user src/vtree_user.cpp src/tabletop_analyzer.cpp)
+add_library(vtree_color_user src/vtree_color_user.cpp src/tabletop_color_analyzer.cpp)
 
 ## Declare a cpp executable
 # add_executable(vision_module_node src/vision_module_node.cpp)
 add_executable(ply2traindata src/ply2traindata.cpp)
+add_executable(ply2colortraindata src/ply2colortraindata.cpp)
 add_executable(build_tree src/build_tree.cpp)
+add_executable(build_color_tree src/build_color_tree.cpp)
 add_executable(build_omap src/build_omap.cpp)
 add_executable(build_omap_occ src/build_omap_occ.cpp)
 add_executable(pcd_from_ply src/pcd_from_ply.cpp)
@@ -123,8 +126,11 @@ add_executable(analyze_pcd_with_noise src/analyze_pcd_with_noise.cpp)
 add_executable(vpm src/views_to_pcd_model.cpp)
 
 target_link_libraries(vtree_user vtkCommon vtkIO ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(vtree_color_user vtkCommon vtkIO ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 target_link_libraries(ply2traindata vtkCommon vtkIO ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(ply2colortraindata vtkCommon vtkIO ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 target_link_libraries(build_tree vtree_user ${catkin_LIBRARIES})
+target_link_libraries(build_color_tree vtree_color_user ${catkin_LIBRARIES})
 target_link_libraries(build_omap vtree_user vtkCommon vtkIO ${catkin_LIBRARIES})
 target_link_libraries(build_omap_occ vtree_user vtkCommon vtkIO ${catkin_LIBRARIES})
 target_link_libraries(pcd_from_ply vtree_user vtkCommon vtkIO ${catkin_LIBRARIES})

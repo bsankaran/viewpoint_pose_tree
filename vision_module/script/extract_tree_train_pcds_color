@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# 	wget http://git.savannah.gnu.org/cgit/parallel.git/plain/src/parallel
+#	chmod 755 parallel
+#	sudo ln -s ./parallel /usr/local/bin/parallel
+#
+# @author
+#	Bharath Sankaran
+#	Computational Motor Control and Learning Laboratory
+#	University of Southern California
+#	Los Angeles, CA 90089
+#	12/04/2012
+#
+#
+
+# clutter objects: apples, bathroomkit, bottles, cups, glasses, vases
+declare -a OBJ_NAME_ARRAY=(3M_spray cheezit crystal_hot_sauce expo_marker kong_frog_toy kygen_puppies palmolive_orange softsoap aunt_jemima cholula_hot_sauce detergent haagen_dazs kong_tennis_toy listerine_green pringles_bbq vo5_shampoo blue_ikea_leg coffee_mate elmers kong_duck_toy krylon_matte mom_to_mom sensations_bodywash windex)
+
+
+PLY_FILE_DIR=$(rospack find vision_module)/../database/color_models
+PCD_SAVE_DIR=$(rospack find vision_module)/../database/color_cloud_data
+PLY2TRAINPCD=$(catkin_find vision_module ply2colortraindata)
+
+
+# Sequential
+#(
+#for obj_idx in ${OBJ_NAME_ARRAY[@]}
+#do
+#	mkdir ${PCD_SAVE_DIR}/${obj_idx}_views
+#	echo ${PLY2TRAINPCD} ${PLY_FILE_DIR}/${obj_idx}/${obj_idx}.ply ${PCD_SAVE_DIR}/${obj_idx}_views
+#	${PLY2TRAINPCD} ${PLY_FILE_DIR}/${obj_idx}.ply ${PCD_SAVE_DIR}/${obj_idx}_views
+#done
+#) | parallel
+
+
+
+# Parallel
+parallel -- mkdir ${PCD_SAVE_DIR}/{}_views ::: ${OBJ_NAME_ARRAY[@]}
+# Includes the recursive directory structure for ply file names
+parallel ${PLY2TRAINPCD} ${PLY_FILE_DIR}/{}.ply ${PCD_SAVE_DIR}/{}_views ::: ${OBJ_NAME_ARRAY[@]}
+
