@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(perception_executive)
+project(test_vp_tree)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -116,12 +116,14 @@ include_directories(include ${VTK_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${catkin_I
 
 ## Declare a cpp executable
 add_executable(simple_point_cloud_analyzer src/simple_point_cloud_analyzer.cpp)
+add_executable(simple_color_point_cloud_analyzer src/simple_color_point_cloud_analyzer.cpp)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(perception_executive_node perception_executive_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(simple_point_cloud_analyzer ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(simple_color_point_cloud_analyzer ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
 #############
 ## Install ##
